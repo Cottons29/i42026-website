@@ -2,6 +2,13 @@ pipeline {
     agent any
 
     stages {
+        stage('Notify Start') {
+            steps {
+                mail to: 'lycuttons@gmail.com',
+                     subject: "Build Started: ${currentBuild.fullDisplayName}",
+                     body: "Build ${currentBuild.fullDisplayName} has started.\n\nCheck: ${env.BUILD_URL}"
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout scm
@@ -24,14 +31,24 @@ pipeline {
     }
     post {
         success {
-            mail to: 'carteria.noreply@gmail.com',
-                 subject: "Hello From Jenkins",
-                 body: "Hello From Jenkins"
+            mail to: 'lycuttons@gmail.com',
+                 subject: "Build Success: ${currentBuild.fullDisplayName}",
+                 body: "Build ${currentBuild.fullDisplayName} completed successfully.\n\nCheck: ${env.BUILD_URL}"
         }
         failure {
-            mail to: 'carteria.noreply@gmail.com',
-                 subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
-                 body: "Something is wrong with ${env.BUILD_URL}"
+            mail to: 'lycuttons@gmail.com',
+                 subject: "Build Failed: ${currentBuild.fullDisplayName}",
+                 body: "Build ${currentBuild.fullDisplayName} has failed.\n\nCheck: ${env.BUILD_URL}"
+        }
+        aborted {
+            mail to: 'lycuttons@gmail.com',
+                 subject: "Build Aborted: ${currentBuild.fullDisplayName}",
+                 body: "Build ${currentBuild.fullDisplayName} was aborted.\n\nCheck: ${env.BUILD_URL}"
+        }
+        unstable {
+            mail to: 'lycuttons@gmail.com',
+                 subject: "Build Unstable: ${currentBuild.fullDisplayName}",
+                 body: "Build ${currentBuild.fullDisplayName} is unstable.\n\nCheck: ${env.BUILD_URL}"
         }
     }
 }
