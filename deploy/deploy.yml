@@ -1,0 +1,93 @@
+---
+- name: Deploy Laravel application
+  hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - nginx
+          - php-fpm
+          - php-mbstring
+          - php-xml
+          - php-curl
+          - php-zip
+          - unzip
+          - composer
+        state: present
+
+    - name: Create application directory
+      file:
+        path: /var/www/i42026-website
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Synchronize application files
+      synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: /var/www/i42026-website/
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+
+    - name: Set permissions
+      file:
+        path: /var/www/i42026-website
+        owner: www-data
+        group: www-data
+        recurse: yes
+
+    - name: Set storage permissions
+      file:
+        path: /var/www/i42026-website/storage
+        mode: '0775'
+        recurse: yes
+
+    - name: Set bootstrap cache permissions
+      file:
+        path: /var/www/i42026-website/bootstrap/cache
+        mode: '0775'
+        recurse: yes
+
+    - name: Install composer dependencies
+      composer:
+        command: install
+        working_dir: /var/www/i42026-website
+        no_dev: yes
+      become_user: www-data
+
+    - name: Run migrations
+      command: php artisan migrate --force
+      args:
+        chdir: /var/www/i42026-website
+
+    - name: Configure Nginx
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/sites-available/i42026-website
+      notify: Restart Nginx
+
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/i42026-website
+        dest: /etc/nginx/sites-enabled/i42026-website
+        state: link
+      notify: Restart Nginx
+
+    - name: Restart PHP-FPM
+      service:
+        name: php-fpm
+        state: restarted
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
