@@ -23,8 +23,13 @@ pipeline {
         }
     }
     post {
+        success {
+            mail to: 'carteria.noreply@gmail.com',
+                 subject: "Hello From Jenkins",
+                 body: "Hello From Jenkins"
+        }
         failure {
-            mail to: 'admin@example.com',
+            mail to: 'carteria.noreply@gmail.com',
                  subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
                  body: "Something is wrong with ${env.BUILD_URL}"
         }
